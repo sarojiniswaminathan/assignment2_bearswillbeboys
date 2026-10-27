@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bears Will Be Boys: Animal Gender Representation</title>
+  <!-- Load D3.js v7 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --male-color: #3b82f6;
+      --female-color: #ec4899;
+      --highlight: #f59e0b;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+    }
+
+    .container {
+      max-width: 1150px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    p.subtitle {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      padding: 6px 14px;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #374151;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .filter-btn.active {
+      background: #1f2937;
+      color: #ffffff;
+      border-color: #1f2937;
+    }
+
+    #chart-wrapper {
+      position: relative;
+      margin-top: 24px;
+      overflow-x: auto;
+    }
+
+    svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Hover Details Card */
+    .tooltip {
+      position: absolute;
+      visibility: hidden;
+      background: #ffffff;
+      border: 2px solid #111827;
+      border-radius: 8px;
+      padding: 14px 16px;
+      width: 240px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      pointer-events: none;
+      font-size: 13px;
+      z-index: 100;
+    }
+
+    .tooltip-header {
+      font-size: 17px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #111827;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+
+    .book-list {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #d1d5db;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .book-list ul {
+      margin: 4px 0 0 0;
+      padding-left: 14px;
+      color: #374151;
+    }
+
+    .axis-line {
+      stroke: #1f2937;
+      stroke-width: 2;
+    }
+
+    .midline {
+      stroke: #9ca3af;
+      stroke-dasharray: 4, 4;
+      stroke-width: 1.5;
+    }
+
+    .axis-label {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #4b5563;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Bears Will Be Boys: Animal Gender Scale</h1>
+    <p class="subtitle">
+      Left-to-right horizontal position tracks pronoun progression from 100% He/Him to 100% She/Her[cite: 2].
+      Stack height indicates the frequency of books featuring each animal[cite: 2].
+    </p>
+    <div class="toolbar">
+      <div class="button-group">
+        <button class="filter-btn active" id="btn-prominent">Prominent Animals (n &ge; 10)</button>
+        <button class="filter-btn" id="btn-all">All Animals</button>
+      </div>
+      <span style="font-size: 13px; color: var(--text-muted);">Hover over any stack for book details</span>
+    </div>
+  </header>
+
+  <div id="chart-wrapper">
+    <svg id="chart"></svg>
+    <div id="tooltip" class="tooltip"></div>
+  </div>
+</div>
+
+<script>
+const margin = { top: 40, right: 60, bottom: 70, left: 60 };
+const width = 1050 - margin.left - margin.right;
+const height = 480 - margin.top - margin.bottom;
+
+const svg = d3.select("#chart")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+const tooltip = d3.select("#tooltip");
+
+// Distinct emoji representations per animal
+const animalIcons = {
+  bear: "🐻", rabbit: "🐰", cat: "🐱", mouse: "🐭", pig: "🐷",
+  dog: "🐶", bird: "🐦", duck: "🦆", dinosaur: "🦖", elephant: "🐘",
+  fox: "🦊", monkey: "🐵", frog: "🐸", spider: "🕷️", lion: "🦁",
+  fish: "🐟", owl: "🦉", goat: "🐐", wolf: "🐺"
+};
+
+// Load dataset from repository root
+d3.csv("kids-book-animals.csv").then(rawData => {
+  // Aggregate stats per animal_group
+  const grouped = d3.rollup(
+    rawData,
+    records => {
+      const total = records.length;
+      const male = records.filter(r => r.pronoun === "he/him").length;
+      const female = records.filter(r => r.pronoun === "she/her").length;
+      const neutral = records.filter(r => r.pronoun === "it").length;
+      const pctMale = (male / total) * 100;
+      const pctFemale = (female / total) * 100;
+      const titles = [...new Set(records.map(r => r.title))].slice(0, 3);
+      return { total, male, female, neutral, pctMale, pctFemale, titles };
+    },
+    d => d.animal_group
+  );
+
+  const dataset = Array.from(grouped, ([animal, meta]) => ({
+    animal,
+    ...meta
+  }));
+
+  // X scale: 0% Female (100% Male) to 100% Female (0% Male)
+  const xScale = d3.scaleLinear()
+    .domain([0, 100])
+    .range([0, width]);
+
+  // Baseline axis
+  svg.append("line")
+    .attr("class", "axis-line")
+    .attr("x1", 0).attr("x2", width)
+    .attr("y1", height).attr("y2", height);
+
+  // 50/50 equality midline
+  svg.append("line")
+    .attr("class", "midline")
+    .attr("x1", xScale(50)).attr("x2", xScale(50))
+    .attr("y1", 0).attr("y2", height);
+
+  // Axis Labels
+  svg.append("text").attr("class", "axis-label")
+    .attr("x", 0).attr("y", height + 35)
+    .text("← 100% He/Him (Male)");
+
+  svg.append("text").attr("class", "axis-label")
+    .attr("x", xScale(50)).attr("y", height + 35)
+    .attr("text-anchor", "middle")
+    .text("50/50 Balanced");
+
+  svg.append("text").attr("class", "axis-label")
+    .attr("x", width).attr("y", height + 35)
+    .attr("text-anchor", "end")
+    .text("100% She/Her (Female) →");
+
+  const stackContainer = svg.append("g").attr("class", "stacks");
+
+  function render(showProminentOnly = true) {
+    const data = showProminentOnly
+      ? dataset.filter(d => d.total >= 10)
+      : dataset;
+
+    const stacks = stackContainer.selectAll(".animal-stack")
+      .data(data, d => d.animal);
+
+    stacks.exit().remove();
+
+    const enter = stacks.enter().append("g")
+      .attr("class", "animal-stack")
+      .attr("cursor", "pointer");
+
+    const merged = enter.merge(stacks)
+      .attr("transform", d => `translate(${xScale(d.pctFemale)}, 0)`);
+
+    merged.selectAll("*").remove();
+
+    merged.each(function(d) {
+      const g = d3.select(this);
+      const icon = animalIcons[d.animal] || "🐾";
+      
+      // Each icon block represents up to 4 books (ensures tallest stacks fit inside canvas)
+      const stackHeight = Math.max(1, Math.round(d.total / 4));
+
+      for (let i = 0; i < stackHeight; i++) {
+        g.append("text")
+          .attr("x", 0)
+          .attr("y", height - 6 - (i * 15))
+          .attr("text-anchor", "middle")
+          .attr("font-size", "14px")
+          .text(icon);
+      }
+
+      // Animal name below baseline
+      g.append("text")
+        .attr("x", 0)
+        .attr("y", height + 18)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "11px")
+        .attr("font-weight", "700")
+        .attr("fill", "#374151")
+        .text(d.animal.toUpperCase());
+    });
+
+    // Tooltip event handlers
+    merged.on("mouseover", (event, d) => {
+      d3.select(event.currentTarget).style("opacity", 0.6);
+      tooltip.style("visibility", "visible")
+        .html(`
+          <div class="tooltip-header">
+            <span>${d.animal}</span>
+            <span>${animalIcons[d.animal] || "🐾"}</span>
+          </div>
+          <div class="stat-row"><span>Books (n):</span> <strong>${d.total}</strong></div>
+          <div class="stat-row"><span>Male:</span> <strong>${d.male} (${d.pctMale.toFixed(1)}%)</strong></div>
+          <div class="stat-row"><span>Female:</span> <strong>${d.female} (${d.pctFemale.toFixed(1)}%)</strong></div>
+          ${d.neutral > 0 ? `<div class="stat-row"><span>Neutral (It):</span> <strong>${d.neutral}</strong></div>` : ''}
+          <div class="book-list">
+            <strong>Sample Titles:</strong>
+            <ul>${d.titles.map(t => `<li>${t}</li>`).join("")}</ul>
+          </div>
+        `);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("top", `${event.pageY - 110}px`)
+        .style("left", `${event.pageX + 18}px`);
+    })
+    .on("mouseout", (event) => {
+      d3.select(event.currentTarget).style("opacity", 1.0);
+      tooltip.style("visibility", "hidden");
+    });
+  }
+
+  // Initial draw
+  render(true);
+
+  // Button filter triggers
+  d3.select("#btn-prominent").on("click", function() {
+    d3.selectAll(".filter-btn").classed("active", false);
+    d3.select(this).classed("active", true);
+    render(true);
+  });
+
+  d3.select("#btn-all").on("click", function() {
+    d3.selectAll(".filter-btn").classed("active", false);
+    d3.select(this).classed("active", true);
+    render(false);
+  });
+});
+</script>
+</body>
+</html>
