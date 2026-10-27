@@ -12,7 +12,6 @@
       --text-muted: #64748b;
       --border-color: #e2e8f0;
       --axis-color: #1e293b;
-      --even-bg: #fffbeb;
       --even-border: #f59e0b;
     }
 
@@ -25,7 +24,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
       background: var(--card-bg);
       padding: 28px;
@@ -88,7 +87,7 @@
       font-size: 12.5px;
       color: #b45309;
       background: #fef3c7;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
       font-weight: 600;
       display: inline-flex;
@@ -190,7 +189,7 @@
     }
 
     .animal-stack {
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition: opacity 0.2s ease;
     }
 
     .animal-stack:hover {
@@ -209,8 +208,9 @@
     </p>
     <div class="toolbar">
       <div class="button-group">
-        <button class="filter-btn active" id="btn-prominent">Prominent Animals (n &ge; 10)</button>
-        <button class="filter-btn" id="btn-all">All Animals</button>
+        <!-- "All Animals" is active by default -->
+        <button class="filter-btn active" id="btn-all">All Animals</button>
+        <button class="filter-btn" id="btn-prominent">Prominent Animals (n &ge; 10)</button>
       </div>
       <div class="scroll-hint">⇄ Scroll horizontally to explore all animals</div>
     </div>
@@ -223,27 +223,32 @@
 </div>
 
 <script>
-// Canvas dimensions: wide width enables horizontal scrolling
-const chartWidth = 2400;
-const chartHeight = 560;
-const margin = { top: 60, right: 100, bottom: 90, left: 100 };
-
-const innerWidth = chartWidth - margin.left - margin.right;
-const innerHeight = chartHeight - margin.top - margin.bottom;
-
-const svg = d3.select("#chart")
-  .attr("width", chartWidth)
-  .attr("height", chartHeight)
-  .append("g")
-  .attr("transform", `translate(${margin.left},${margin.top})`);
-
-const tooltip = d3.select("#tooltip");
-
+// Icon dictionary mapping all 119 animals in the dataset
 const animalIcons = {
-  bear: "🐻", rabbit: "🐰", cat: "🐱", mouse: "🐭", pig: "🐷",
-  dog: "🐶", bird: "🐦", duck: "🦆", dinosaur: "🦖", elephant: "🐘",
-  fox: "🦊", monkey: "🐵", frog: "🐸", spider: "🕷️", lion: "🦁",
-  fish: "🐟", owl: "🦉", goat: "🐐", wolf: "🐺"
+  bear: '🐻', rabbit: '🐰', cat: '🐱', mouse: '🐭', pig: '🐷',
+  dog: '🐶', bird: '🐦', dinosaur: '🦖', elephant: '🐘', fox: '🦊',
+  monkey: '🐵', frog: '🐸', spider: '🕷️', lion: '🦁', duck: '🦆',
+  fish: '🐟', owl: '🦉', goat: '🐐', wolf: '🐺', reindeer: '🦌',
+  llama: '🦙', toad: '🐸', aardvark: '🐾', goose: '🪿', worm: '🪱',
+  fly: '🪰', penguin: '🐧', badger: '🦡', hippo: '🦛', donkey: '🫏',
+  crab: '🦀', rhino: '🦏', horse: '🐴', snake: '🐍', tiger: '🐯',
+  raccoon: '🦝', crow: '🐦‍⬛', moose: '🫎', skunk: '🦨', ladybug: '🐞',
+  kangaroo: '🦘', turtle: '🐢', ox: '🐂', sheep: '🐑', bat: '🦇',
+  cricket: '🦗', deer: '🦌', hedgehog: '🦔', butterfly: '🦋', chameleon: '🦎',
+  rat: '🐀', whale: '🐋', mole: '🦔', opossum: '🦝', chicken: '🐔',
+  squirrel: '🐿️', bug: '🐛', pony: '🐴', firefly: '🪲', eagle: '🦅',
+  seal: '🦭', cobra: '🐍', chipmunk: '🐿️', beaver: '🦫', giraffe: '🦒',
+  'praying mantis': '🦗', hyena: '🐺', camel: '🐫', gorilla: '🦍', crocodile: '🐊',
+  alligator: '🐊', caterpillar: '🐛', tortoise: '🐢', 'stink bug': '🪲', hog: '🐗',
+  'walking stick': '🦗', newt: '🦎', iguana: '🦎', jaguar: '🐆', octopus: '🐙',
+  lizard: '🦎', meerkat: '🦡', baboon: '🐒', leopard: '🐆', 'boa constrictor': '🐍',
+  chimpanzee: '🐒', koala: '🐨', ape: '🦍', narwhal: '🐋', bee: '🐝',
+  mink: '🦦', flamingo: '🦩', orangutan: '🦧', woodchuck: '🦫', lemming: '🐹',
+  mosquito: '🦟', lobster: '🦞', warthog: '🐗', clam: '🦪', jellyfish: '🪼',
+  squid: '🦑', grasshopper: '🦗', 'luna moth': '🦋', porcupine: '🦔', otter: '🦦',
+  snail: '🐌', armadillo: '🦔', ostrich: '🦤', muskrat: '🐀', eel: '🐍',
+  dolphin: '🐬', inchworm: '🐛', wolverine: '🦡', mongoose: '🦦', turkey: '🦃',
+  swan: '🦢', 'yellow jacket': '🐝', 'stag beetle': '🪲', sloth: '🦥'
 };
 
 const evenFive = new Set(["bird", "duck", "cat", "mouse", "pig"]);
@@ -269,63 +274,18 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     ...meta
   })).sort((a, b) => a.pctFemale - b.pctFemale);
 
-  const xScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+  const tooltip = d3.select("#tooltip");
 
-  // Baseline axis
-  svg.append("line")
-    .attr("class", "axis-line")
-    .attr("x1", 0).attr("x2", innerWidth)
-    .attr("y1", innerHeight).attr("y2", innerHeight);
-
-  // 50/50 equality midline
-  svg.append("line")
-    .attr("class", "midline")
-    .attr("x1", xScale(50)).attr("x2", xScale(50))
-    .attr("y1", -20).attr("y2", innerHeight);
-
-  // Axis Labels
-  svg.append("text").attr("class", "axis-label")
-    .attr("x", 0).attr("y", innerHeight + 45)
-    .text("← 100% He/Him (Male)");
-
-  svg.append("text").attr("class", "axis-label")
-    .attr("x", xScale(50)).attr("y", innerHeight + 45)
-    .attr("text-anchor", "middle")
-    .text("50/50 Balanced");
-
-  svg.append("text").attr("class", "axis-label")
-    .attr("x", innerWidth).attr("y", innerHeight + 45)
-    .attr("text-anchor", "end")
-    .text("100% She/Her (Female) →");
-
-  // Minor ticks on baseline every 10%
-  for (let p = 0; p <= 100; p += 10) {
-    svg.append("line")
-      .attr("x1", xScale(p)).attr("x2", xScale(p))
-      .attr("y1", innerHeight).attr("y2", innerHeight + 8)
-      .attr("stroke", "#94a3b8")
-      .attr("stroke-width", 1.5);
-
-    svg.append("text")
-      .attr("x", xScale(p))
-      .attr("y", innerHeight + 22)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "10px")
-      .attr("fill", "#94a3b8")
-      .text(p + "%");
-  }
-
-  const stackContainer = svg.append("g").attr("class", "stacks");
-
-  // Horizontal collision separation so tight stacks don't overlap
-  function separateX(data, minDistance = 54) {
+  // Dynamic separation to handle dense animal placement
+  function separateX(data, innerWidth, minDistance = 42) {
+    const xScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
     const positions = data.map(d => ({
       origX: xScale(d.pctFemale),
       x: xScale(d.pctFemale),
       data: d
     }));
 
-    for (let iter = 0; iter < 120; iter++) {
+    for (let iter = 0; iter < 150; iter++) {
       let moved = false;
       for (let i = 0; i < positions.length - 1; i++) {
         const cur = positions[i];
@@ -340,87 +300,145 @@ d3.csv("kids-book-animals.csv").then(rawData => {
       }
       if (!moved) break;
     }
-    return positions;
+    return { positions, xScale };
   }
 
-  function render(showProminentOnly = true) {
-    const data = showProminentOnly
-      ? dataset.filter(d => d.total >= 10)
-      : dataset;
+  function render(showAll = true) {
+    const data = showAll
+      ? dataset
+      : dataset.filter(d => d.total >= 10);
 
-    const positioned = separateX(data, 56);
+    // Dynamic width: wider canvas for all 119 animals, narrower for prominent
+    const chartWidth = showAll ? 5200 : 2200;
+    const chartHeight = 580;
+    const margin = { top: 60, right: 120, bottom: 95, left: 120 };
+
+    const innerWidth = chartWidth - margin.left - margin.right;
+    const innerHeight = chartHeight - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart");
+    svg.selectAll("*").remove(); // Clear previous drawing
+
+    svg.attr("width", chartWidth).attr("height", chartHeight);
+
+    const mainG = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const { positions, xScale } = separateX(data, innerWidth, showAll ? 42 : 56);
+
+    // Baseline axis
+    mainG.append("line")
+      .attr("class", "axis-line")
+      .attr("x1", 0).attr("x2", innerWidth)
+      .attr("y1", innerHeight).attr("y2", innerHeight);
+
+    // 50/50 midline
+    mainG.append("line")
+      .attr("class", "midline")
+      .attr("x1", xScale(50)).attr("x2", xScale(50))
+      .attr("y1", -20).attr("y2", innerHeight);
+
+    // Scale end labels
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", 0).attr("y", innerHeight + 46)
+      .text("← 100% He/Him (Male)");
+
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", xScale(50)).attr("y", innerHeight + 46)
+      .attr("text-anchor", "middle")
+      .text("50/50 Balanced");
+
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", innerWidth).attr("y", innerHeight + 46)
+      .attr("text-anchor", "end")
+      .text("100% She/Her (Female) →");
+
+    // Percentage ticks along baseline
+    for (let p = 0; p <= 100; p += 10) {
+      mainG.append("line")
+        .attr("x1", xScale(p)).attr("x2", xScale(p))
+        .attr("y1", innerHeight).attr("y2", innerHeight + 8)
+        .attr("stroke", "#94a3b8")
+        .attr("stroke-width", 1.5);
+
+      mainG.append("text")
+        .attr("x", xScale(p))
+        .attr("y", innerHeight + 22)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .attr("fill", "#94a3b8")
+        .text(p + "%");
+    }
+
+    const stackContainer = mainG.append("g").attr("class", "stacks");
 
     const stacks = stackContainer.selectAll(".animal-stack")
-      .data(positioned, d => d.data.animal);
-
-    stacks.exit().remove();
-
-    const enter = stacks.enter().append("g")
+      .data(positions, d => d.data.animal)
+      .enter()
+      .append("g")
       .attr("class", "animal-stack")
-      .attr("cursor", "pointer");
-
-    const merged = enter.merge(stacks)
+      .attr("cursor", "pointer")
       .attr("transform", d => `translate(${d.x}, 0)`);
 
-    merged.selectAll("*").remove();
-
-    merged.each(function(pos) {
+    stacks.each(function(pos) {
       const g = d3.select(this);
       const d = pos.data;
       const icon = animalIcons[d.animal] || "🐾";
       const isEven = evenFive.has(d.animal);
 
-      // Unit size and stack calculation: 1 icon per ~4 books
-      const iconSize = 18;
-      const step = 20;
-      const stackCount = Math.max(1, Math.min(20, Math.round(d.total / 4)));
-      const stackTopY = innerHeight - (stackCount * step) - 10;
+      const step = 18;
+      // Stacking logic: 1 icon per book for small counts; scales logarithmically/proportionally for huge stacks
+      const stackCount = d.total <= 8 
+        ? d.total 
+        : Math.min(22, 8 + Math.round((d.total - 8) / 4.5));
 
-      // Connecting leader line down to exact baseline tick position
+      const stackTopY = innerHeight - (stackCount * step) - 10;
       const deltaX = pos.origX - pos.x;
+
+      // Leader tick line linking stack to exact pronoun % on baseline
       g.append("line")
         .attr("x1", 0).attr("y1", innerHeight)
         .attr("x2", deltaX).attr("y2", innerHeight + 6)
         .attr("stroke", isEven ? "#f59e0b" : "#cbd5e1")
         .attr("stroke-width", 1.5)
-        .attr("stroke-dasharray", deltaX !== 0 ? "2,2" : "none");
+        .attr("stroke-dasharray", Math.abs(deltaX) > 2 ? "2,2" : "none");
 
-      // Stack container bracket / outline pill
-      const colW = 38;
+      // Stack container bracket pill
+      const colW = 34;
       g.append("rect")
         .attr("x", -colW / 2)
-        .attr("y", stackTopY - 14)
+        .attr("y", stackTopY - 12)
         .attr("width", colW)
-        .attr("height", innerHeight - (stackTopY - 14))
-        .attr("rx", 19)
-        .attr("fill", isEven ? "rgba(254, 243, 199, 0.5)" : "rgba(241, 245, 249, 0.4)")
+        .attr("height", innerHeight - (stackTopY - 12))
+        .attr("rx", 17)
+        .attr("fill", isEven ? "rgba(254, 243, 199, 0.55)" : "rgba(241, 245, 249, 0.45)")
         .attr("stroke", isEven ? "#f59e0b" : "#e2e8f0")
         .attr("stroke-width", isEven ? 2 : 1);
 
-      // Stacked animal icons
+      // Vertically stacked animal icons
       for (let i = 0; i < stackCount; i++) {
         g.append("text")
           .attr("x", 0)
-          .attr("y", innerHeight - 12 - (i * step))
+          .attr("y", innerHeight - 10 - (i * step))
           .attr("text-anchor", "middle")
-          .attr("font-size", `${iconSize}px`)
+          .attr("font-size", "15px")
           .text(icon);
       }
 
-      // Frequency total badge over stack top
+      // Sample count badge above stack
       g.append("text")
         .attr("x", 0)
-        .attr("y", stackTopY - 20)
+        .attr("y", stackTopY - 18)
         .attr("text-anchor", "middle")
         .attr("font-size", "11px")
         .attr("font-weight", "800")
         .attr("fill", isEven ? "#b45309" : "#475569")
         .text(`n=${d.total}`);
 
-      // Animal name badge under stack
+      // Animal name badge
       g.append("text")
         .attr("x", 0)
-        .attr("y", innerHeight + 65)
+        .attr("y", innerHeight + 66)
         .attr("text-anchor", "middle")
         .attr("font-size", "11px")
         .attr("font-weight", isEven ? "800" : "600")
@@ -428,8 +446,8 @@ d3.csv("kids-book-animals.csv").then(rawData => {
         .text(d.animal.toUpperCase());
     });
 
-    // Tooltip bindings
-    merged.on("mouseover", (event, pos) => {
+    // Tooltip hover bindings
+    stacks.on("mouseover", (event, pos) => {
       const d = pos.data;
       tooltip.style("visibility", "visible")
         .html(`
@@ -450,7 +468,7 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     .on("mousemove", (event) => {
       const containerRect = document.getElementById("chart-scroll-container").getBoundingClientRect();
       const leftPos = event.clientX - containerRect.left + 15;
-      const topPos = event.clientY - containerRect.top - 80;
+      const topPos = event.clientY - containerRect.top - 70;
 
       tooltip
         .style("top", `${Math.max(10, topPos)}px`)
@@ -461,17 +479,17 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     });
   }
 
-  // Default render with prominent species
+  // DEFAULT VIEW: All Animals
   render(true);
 
-  // Filter handlers
-  d3.select("#btn-prominent").on("click", function() {
+  // Button filter click triggers
+  d3.select("#btn-all").on("click", function() {
     d3.selectAll(".filter-btn").classed("active", false);
     d3.select(this).classed("active", true);
     render(true);
   });
 
-  d3.select("#btn-all").on("click", function() {
+  d3.select("#btn-prominent").on("click", function() {
     d3.selectAll(".filter-btn").classed("active", false);
     d3.select(this).classed("active", true);
     render(false);
