@@ -201,14 +201,14 @@
   <header>
     <h1>Bears Will Be Boys: Animal Gender Scale</h1>
     <p class="subtitle">
-      Horizontal scale: Male (0% Female) to Female (100% Female)[cite: 2]. Stack height indicates total books recorded ($n$)[cite: 2].
+      Horizontal position shows the share of books coded she/her (0–100%, including all books in the denominator). Icon stacks are scaled for readability; the n badge shows the exact number of books.
     </p>
     <div class="toolbar">
       <div class="controls-group">
         <button class="btn" id="btn-zoom-in">＋ Zoom In</button>
         <button class="btn" id="btn-zoom-out">－ Zoom Out</button>
         <button class="btn" id="btn-zoom-reset">Reset</button>
-        <span class="zoom-level-badge" id="visible-count-badge">Showing 19 animals (n &ge; 10)</span>
+        <span class="zoom-level-badge" id="visible-count-badge">Loading animals...</span>
       </div>
       <div class="zoom-instruction">🔍 Scroll / pinch to zoom in &amp; discover smaller-sample animals</div>
     </div>
@@ -312,12 +312,12 @@ d3.csv("kids-book-animals.csv").then(rawData => {
   // Labels
   mainG.append("text").attr("class", "axis-label")
     .attr("x", 0).attr("y", innerHeight + 46)
-    .text("← 100% He/Him (Male)");
+    .text("← 0% She/Her");
 
   mainG.append("text").attr("class", "axis-label")
     .attr("x", innerWidth).attr("y", innerHeight + 46)
     .attr("text-anchor", "end")
-    .text("100% She/Her (Female) →");
+    .text("100% She/Her →");
 
   // Midline group
   const midlineG = zoomableG.append("g").attr("class", "midline-g");
@@ -329,7 +329,7 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     .attr("class", "axis-label")
     .attr("y", innerHeight + 46)
     .attr("text-anchor", "middle")
-    .text("50/50 Balanced");
+    .text("50% She/Her");
 
   // Create element nodes for each animal
   const animalNodes = stacksG.selectAll(".animal-stack")
@@ -393,18 +393,30 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     tooltip.style("visibility", "visible")
       .html(`
         <div class="tooltip-header">
-          <span>${d.animal}</span>
-          <span>${animalIcons[d.animal] || "🐾"}</span>
+          <span class="animal-name"></span>
+          <span class="animal-icon"></span>
         </div>
-        <div class="stat-row"><span>Total Books (n):</span> <strong>${d.total}</strong></div>
-        <div class="stat-row"><span>Male (He/Him):</span> <strong>${d.male} (${d.pctMale.toFixed(1)}%)</strong></div>
-        <div class="stat-row"><span>Female (She/Her):</span> <strong>${d.female} (${d.pctFemale.toFixed(1)}%)</strong></div>
-        ${d.neutral > 0 ? `<div class="stat-row"><span>Neutral (It):</span> <strong>${d.neutral}</strong></div>` : ''}
+        <div class="stat-row"><span>Total Books (n):</span> <strong class="total-stat"></strong></div>
+        <div class="stat-row"><span>Male (He/Him):</span> <strong class="male-stat"></strong></div>
+        <div class="stat-row"><span>Female (She/Her):</span> <strong class="female-stat"></strong></div>
+        <div class="stat-row neutral-row"><span>Neutral (It):</span> <strong class="neutral-stat"></strong></div>
         <div class="book-list">
           <strong>Sample Titles:</strong>
-          <ul>${d.titles.map(t => `<li>${t}</li>`).join("")}</ul>
+          <ul></ul>
         </div>
       `);
+    tooltip.select(".animal-name").text(d.animal);
+    tooltip.select(".animal-icon").text(animalIcons[d.animal] || "🐾");
+    tooltip.select(".total-stat").text(d.total);
+    tooltip.select(".male-stat").text(`${d.male} (${d.pctMale.toFixed(1)}%)`);
+    tooltip.select(".female-stat").text(`${d.female} (${d.pctFemale.toFixed(1)}%)`);
+    tooltip.select(".neutral-row").style("display", d.neutral > 0 ? null : "none");
+    tooltip.select(".neutral-stat").text(d.neutral);
+    tooltip.select(".book-list ul")
+      .selectAll("li")
+      .data(d.titles)
+      .join("li")
+      .text(title => title);
   })
   .on("mousemove", (event) => {
     const containerRect = containerEl.getBoundingClientRect();
