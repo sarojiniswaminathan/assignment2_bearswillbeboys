@@ -435,11 +435,12 @@ d3.csv("kids-book-animals.csv").then(rawData => {
         .attr("fill", isEven ? "#b45309" : "#475569")
         .text(`n=${d.total}`);
 
-      // Animal name badge
+      // Diagonal animal name label (angled -45 degrees)
       g.append("text")
         .attr("x", 0)
-        .attr("y", innerHeight + 66)
-        .attr("text-anchor", "middle")
+        .attr("y", innerHeight + 20)
+        .attr("text-anchor", "end")
+        .attr("transform", `rotate(-45, 0, ${innerHeight + 20})`)
         .attr("font-size", "11px")
         .attr("font-weight", isEven ? "800" : "600")
         .attr("fill", isEven ? "#b45309" : "#1e293b")
