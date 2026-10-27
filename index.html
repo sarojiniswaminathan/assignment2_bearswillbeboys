@@ -11,33 +11,31 @@
       --text-main: #0f172a;
       --text-muted: #64748b;
       --border-color: #e2e8f0;
-      --bar-bg: #e2e8f0;
-      --bar-male: #93c5fd;
-      --bar-female: #f472b6;
-      --accent-even: #fef3c7;
-      --accent-even-border: #f59e0b;
+      --axis-color: #1e293b;
+      --even-bg: #fffbeb;
+      --even-border: #f59e0b;
     }
 
     body {
       margin: 0;
-      padding: 32px 16px;
+      padding: 30px 16px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text-main);
     }
 
     .container {
-      max-width: 1180px;
+      max-width: 1200px;
       margin: 0 auto;
       background: var(--card-bg);
-      padding: 32px;
+      padding: 28px;
       border-radius: 14px;
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
       border: 1px solid var(--border-color);
     }
 
     header {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
 
     h1 {
@@ -50,7 +48,7 @@
     p.subtitle {
       margin: 0;
       color: var(--text-muted);
-      font-size: 15px;
+      font-size: 14.5px;
       line-height: 1.5;
     }
 
@@ -58,7 +56,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 18px;
+      margin-top: 16px;
       padding-bottom: 14px;
       border-bottom: 1px solid var(--border-color);
     }
@@ -86,14 +84,44 @@
       border-color: #0f172a;
     }
 
-    #chart-wrapper {
+    .scroll-hint {
+      font-size: 12.5px;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Horizontally scrollable chart viewport */
+    #chart-scroll-container {
       position: relative;
-      margin-top: 16px;
+      margin-top: 20px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #ffffff;
+      scrollbar-width: thin;
+      scrollbar-color: #94a3b8 #f1f5f9;
+    }
+
+    #chart-scroll-container::-webkit-scrollbar {
+      height: 10px;
+    }
+    #chart-scroll-container::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    #chart-scroll-container::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 5px;
     }
 
     svg {
       display: block;
-      margin: 0 auto;
       overflow: visible;
     }
 
@@ -109,7 +137,7 @@
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
       pointer-events: none;
       font-size: 13px;
-      z-index: 100;
+      z-index: 200;
     }
 
     .tooltip-header {
@@ -145,30 +173,28 @@
     }
 
     .axis-line {
-      stroke: #0f172a;
-      stroke-width: 2;
+      stroke: var(--axis-color);
+      stroke-width: 2.5;
     }
 
     .midline {
       stroke: #94a3b8;
-      stroke-dasharray: 4, 4;
+      stroke-dasharray: 5, 5;
       stroke-width: 1.5;
     }
 
     .axis-label {
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
       fill: #475569;
     }
 
-    .y-grid line {
-      stroke: #f1f5f9;
-      stroke-width: 1;
+    .animal-stack {
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
-    .y-grid text {
-      font-size: 10px;
-      fill: #94a3b8;
+    .animal-stack:hover {
+      opacity: 0.8;
     }
   </style>
 </head>
@@ -178,32 +204,36 @@
   <header>
     <h1>Bears Will Be Boys: Animal Gender Scale</h1>
     <p class="subtitle">
-      Horizontal position marks pronoun proportion from predominantly male (left) to female (right).
-      Stack height signifies total book count (frequency).
+      Horizontal position represents pronoun progression from 100% He/Him (Male) to 100% She/Her (Female).
+      Stack height indicates total books recorded ($n$).
     </p>
     <div class="toolbar">
       <div class="button-group">
         <button class="filter-btn active" id="btn-prominent">Prominent Animals (n &ge; 10)</button>
         <button class="filter-btn" id="btn-all">All Animals</button>
       </div>
-      <span style="font-size: 13px; color: var(--text-muted);">Hover any column for titles &amp; ratios</span>
+      <div class="scroll-hint">⇄ Scroll horizontally to explore all animals</div>
     </div>
   </header>
 
-  <div id="chart-wrapper">
+  <div id="chart-scroll-container">
     <svg id="chart"></svg>
     <div id="tooltip" class="tooltip"></div>
   </div>
 </div>
 
 <script>
-const margin = { top: 40, right: 50, bottom: 90, left: 60 };
-const width = 1100 - margin.left - margin.right;
-const height = 480 - margin.top - margin.bottom;
+// Canvas dimensions: wide width enables horizontal scrolling
+const chartWidth = 2400;
+const chartHeight = 560;
+const margin = { top: 60, right: 100, bottom: 90, left: 100 };
+
+const innerWidth = chartWidth - margin.left - margin.right;
+const innerHeight = chartHeight - margin.top - margin.bottom;
 
 const svg = d3.select("#chart")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
+  .attr("width", chartWidth)
+  .attr("height", chartHeight)
   .append("g")
   .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -216,7 +246,6 @@ const animalIcons = {
   fish: "🐟", owl: "🦉", goat: "🐐", wolf: "🐺"
 };
 
-// Animals highlighting the closer-to-even split
 const evenFive = new Set(["bird", "duck", "cat", "mouse", "pig"]);
 
 d3.csv("kids-book-animals.csv").then(rawData => {
@@ -240,54 +269,89 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     ...meta
   })).sort((a, b) => a.pctFemale - b.pctFemale);
 
-  const xScale = d3.scaleLinear().domain([0, 100]).range([0, width]);
-  const yScale = d3.scaleLinear().domain([0, 100]).range([height, 0]);
-
-  // Y-axis gridlines
-  const yAxis = d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(d => `${d} bks`);
-  svg.append("g")
-    .attr("class", "y-grid")
-    .call(yAxis)
-    .call(g => g.select(".domain").remove());
+  const xScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
 
   // Baseline axis
   svg.append("line")
     .attr("class", "axis-line")
-    .attr("x1", 0).attr("x2", width)
-    .attr("y1", height).attr("y2", height);
+    .attr("x1", 0).attr("x2", innerWidth)
+    .attr("y1", innerHeight).attr("y2", innerHeight);
 
   // 50/50 equality midline
   svg.append("line")
     .attr("class", "midline")
     .attr("x1", xScale(50)).attr("x2", xScale(50))
-    .attr("y1", 0).attr("y2", height);
+    .attr("y1", -20).attr("y2", innerHeight);
 
   // Axis Labels
   svg.append("text").attr("class", "axis-label")
-    .attr("x", 0).attr("y", height + 70)
+    .attr("x", 0).attr("y", innerHeight + 45)
     .text("← 100% He/Him (Male)");
 
   svg.append("text").attr("class", "axis-label")
-    .attr("x", xScale(50)).attr("y", height + 70)
+    .attr("x", xScale(50)).attr("y", innerHeight + 45)
     .attr("text-anchor", "middle")
     .text("50/50 Balanced");
 
   svg.append("text").attr("class", "axis-label")
-    .attr("x", width).attr("y", height + 70)
+    .attr("x", innerWidth).attr("y", innerHeight + 45)
     .attr("text-anchor", "end")
     .text("100% She/Her (Female) →");
 
+  // Minor ticks on baseline every 10%
+  for (let p = 0; p <= 100; p += 10) {
+    svg.append("line")
+      .attr("x1", xScale(p)).attr("x2", xScale(p))
+      .attr("y1", innerHeight).attr("y2", innerHeight + 8)
+      .attr("stroke", "#94a3b8")
+      .attr("stroke-width", 1.5);
+
+    svg.append("text")
+      .attr("x", xScale(p))
+      .attr("y", innerHeight + 22)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "10px")
+      .attr("fill", "#94a3b8")
+      .text(p + "%");
+  }
+
   const stackContainer = svg.append("g").attr("class", "stacks");
+
+  // Horizontal collision separation so tight stacks don't overlap
+  function separateX(data, minDistance = 54) {
+    const positions = data.map(d => ({
+      origX: xScale(d.pctFemale),
+      x: xScale(d.pctFemale),
+      data: d
+    }));
+
+    for (let iter = 0; iter < 120; iter++) {
+      let moved = false;
+      for (let i = 0; i < positions.length - 1; i++) {
+        const cur = positions[i];
+        const next = positions[i + 1];
+        const diff = next.x - cur.x;
+        if (diff < minDistance) {
+          const shift = (minDistance - diff) / 2;
+          cur.x = Math.max(0, cur.x - shift);
+          next.x = Math.min(innerWidth, next.x + shift);
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+    return positions;
+  }
 
   function render(showProminentOnly = true) {
     const data = showProminentOnly
       ? dataset.filter(d => d.total >= 10)
       : dataset;
 
-    const columnWidth = Math.max(14, Math.min(28, width / (data.length * 1.5)));
+    const positioned = separateX(data, 56);
 
     const stacks = stackContainer.selectAll(".animal-stack")
-      .data(data, d => d.animal);
+      .data(positioned, d => d.data.animal);
 
     stacks.exit().remove();
 
@@ -296,50 +360,77 @@ d3.csv("kids-book-animals.csv").then(rawData => {
       .attr("cursor", "pointer");
 
     const merged = enter.merge(stacks)
-      .attr("transform", d => `translate(${xScale(d.pctFemale)}, 0)`);
+      .attr("transform", d => `translate(${d.x}, 0)`);
 
     merged.selectAll("*").remove();
 
-    merged.each(function(d) {
+    merged.each(function(pos) {
       const g = d3.select(this);
+      const d = pos.data;
       const icon = animalIcons[d.animal] || "🐾";
       const isEven = evenFive.has(d.animal);
-      const barH = height - yScale(d.total);
 
-      // Stack pillar background
+      // Unit size and stack calculation: 1 icon per ~4 books
+      const iconSize = 18;
+      const step = 20;
+      const stackCount = Math.max(1, Math.min(20, Math.round(d.total / 4)));
+      const stackTopY = innerHeight - (stackCount * step) - 10;
+
+      // Connecting leader line down to exact baseline tick position
+      const deltaX = pos.origX - pos.x;
+      g.append("line")
+        .attr("x1", 0).attr("y1", innerHeight)
+        .attr("x2", deltaX).attr("y2", innerHeight + 6)
+        .attr("stroke", isEven ? "#f59e0b" : "#cbd5e1")
+        .attr("stroke-width", 1.5)
+        .attr("stroke-dasharray", deltaX !== 0 ? "2,2" : "none");
+
+      // Stack container bracket / outline pill
+      const colW = 38;
       g.append("rect")
-        .attr("x", -columnWidth / 2)
-        .attr("y", yScale(d.total))
-        .attr("width", columnWidth)
-        .attr("height", barH)
-        .attr("rx", 6)
-        .attr("fill", isEven ? "rgba(245, 158, 11, 0.18)" : "rgba(148, 163, 184, 0.18)")
-        .attr("stroke", isEven ? "#f59e0b" : "#94a3b8")
-        .attr("stroke-width", isEven ? 1.8 : 1);
+        .attr("x", -colW / 2)
+        .attr("y", stackTopY - 14)
+        .attr("width", colW)
+        .attr("height", innerHeight - (stackTopY - 14))
+        .attr("rx", 19)
+        .attr("fill", isEven ? "rgba(254, 243, 199, 0.5)" : "rgba(241, 245, 249, 0.4)")
+        .attr("stroke", isEven ? "#f59e0b" : "#e2e8f0")
+        .attr("stroke-width", isEven ? 2 : 1);
 
-      // Top Animal Icon Badge
+      // Stacked animal icons
+      for (let i = 0; i < stackCount; i++) {
+        g.append("text")
+          .attr("x", 0)
+          .attr("y", innerHeight - 12 - (i * step))
+          .attr("text-anchor", "middle")
+          .attr("font-size", `${iconSize}px`)
+          .text(icon);
+      }
+
+      // Frequency total badge over stack top
       g.append("text")
         .attr("x", 0)
-        .attr("y", yScale(d.total) - 8)
+        .attr("y", stackTopY - 20)
         .attr("text-anchor", "middle")
-        .attr("font-size", columnWidth > 18 ? "18px" : "14px")
-        .text(icon);
+        .attr("font-size", "11px")
+        .attr("font-weight", "800")
+        .attr("fill", isEven ? "#b45309" : "#475569")
+        .text(`n=${d.total}`);
 
-      // Angled bottom label to prevent text overlaps
+      // Animal name badge under stack
       g.append("text")
         .attr("x", 0)
-        .attr("y", height + 14)
-        .attr("text-anchor", "end")
-        .attr("transform", `rotate(-50, 0, ${height + 14})`)
+        .attr("y", innerHeight + 65)
+        .attr("text-anchor", "middle")
         .attr("font-size", "11px")
         .attr("font-weight", isEven ? "800" : "600")
-        .attr("fill", isEven ? "#b45309" : "#334155")
+        .attr("fill", isEven ? "#b45309" : "#1e293b")
         .text(d.animal.toUpperCase());
     });
 
-    // Tooltip event bindings
-    merged.on("mouseover", (event, d) => {
-      d3.select(event.currentTarget).select("rect").attr("fill", "#fbbf24");
+    // Tooltip bindings
+    merged.on("mouseover", (event, pos) => {
+      const d = pos.data;
       tooltip.style("visibility", "visible")
         .html(`
           <div class="tooltip-header">
@@ -357,20 +448,23 @@ d3.csv("kids-book-animals.csv").then(rawData => {
         `);
     })
     .on("mousemove", (event) => {
+      const containerRect = document.getElementById("chart-scroll-container").getBoundingClientRect();
+      const leftPos = event.clientX - containerRect.left + 15;
+      const topPos = event.clientY - containerRect.top - 80;
+
       tooltip
-        .style("top", `${event.pageY - 120}px`)
-        .style("left", `${event.pageX + 18}px`);
+        .style("top", `${Math.max(10, topPos)}px`)
+        .style("left", `${leftPos}px`);
     })
-    .on("mouseout", (event, d) => {
-      const isEven = evenFive.has(d.animal);
-      d3.select(event.currentTarget).select("rect")
-        .attr("fill", isEven ? "rgba(245, 158, 11, 0.18)" : "rgba(148, 163, 184, 0.18)");
+    .on("mouseout", () => {
       tooltip.style("visibility", "hidden");
     });
   }
 
+  // Default render with prominent species
   render(true);
 
+  // Filter handlers
   d3.select("#btn-prominent").on("click", function() {
     d3.selectAll(".filter-btn").classed("active", false);
     d3.select(this).classed("active", true);
