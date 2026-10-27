@@ -201,8 +201,7 @@
   <header>
     <h1>Bears Will Be Boys: Animal Gender Scale</h1>
     <p class="subtitle">
-      Horizontal position shows the share of books coded she/her (0–100%, including all books in the denominator). Icon stacks are scaled for readability; the n badge shows the exact number of books.
-    </p>
+      Horizontal position marks each animal along a spectrum from 100% He/Him (all male) on the far left to 100% She/Her (all female) on the far right. Stack height reflects how often that animal appears across all books, with the $n$ badge showing the exact sample count.       </p>
     <div class="toolbar">
       <div class="controls-group">
         <button class="btn" id="btn-zoom-in">＋ Zoom In</button>
@@ -312,7 +311,7 @@ d3.csv("kids-book-animals.csv").then(rawData => {
   // Labels
   mainG.append("text").attr("class", "axis-label")
     .attr("x", 0).attr("y", innerHeight + 46)
-    .text("← 0% She/Her");
+    .text("← 100% He/Him");
 
   mainG.append("text").attr("class", "axis-label")
     .attr("x", innerWidth).attr("y", innerHeight + 46)
@@ -329,7 +328,7 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     .attr("class", "axis-label")
     .attr("y", innerHeight + 46)
     .attr("text-anchor", "middle")
-    .text("50% She/Her");
+    .text("Balanced");
 
   // Create element nodes for each animal
   const animalNodes = stacksG.selectAll(".animal-stack")
