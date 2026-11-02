@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bears Will Be Boys: Animal Gender Scale (Semantic Zoom)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bears Will Be Boys: Animal Gender Scale (Adaptive)</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     :root {
@@ -15,9 +16,13 @@
       --even-border: #f59e0b;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      padding: 24px 16px;
+      padding: 16px 8px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text-main);
@@ -27,7 +32,7 @@
       max-width: 1200px;
       margin: 0 auto;
       background: var(--card-bg);
-      padding: 28px;
+      padding: 20px;
       border-radius: 14px;
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
       border: 1px solid var(--border-color);
@@ -39,7 +44,7 @@
 
     h1 {
       margin: 0 0 6px 0;
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.5px;
     }
@@ -47,14 +52,16 @@
     p.subtitle {
       margin: 0;
       color: var(--text-muted);
-      font-size: 14.5px;
-      line-height: 1.5;
+      font-size: 13.5px;
+      line-height: 1.45;
     }
 
     .toolbar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       margin-top: 14px;
       padding-bottom: 12px;
       border-bottom: 1px solid var(--border-color);
@@ -63,14 +70,15 @@
     .controls-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .btn {
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
-      padding: 6px 12px;
-      font-size: 13px;
+      padding: 6px 10px;
+      font-size: 12px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
@@ -83,20 +91,20 @@
     }
 
     .zoom-level-badge {
-      font-size: 12.5px;
+      font-size: 11.5px;
       font-weight: 600;
       color: #475569;
       background: #f8fafc;
-      padding: 4px 10px;
+      padding: 4px 8px;
       border-radius: 6px;
       border: 1px solid #e2e8f0;
     }
 
     .zoom-instruction {
-      font-size: 12.5px;
+      font-size: 11.5px;
       color: #b45309;
       background: #fef3c7;
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 20px;
       font-weight: 600;
       display: inline-flex;
@@ -106,12 +114,13 @@
 
     #chart-wrapper {
       position: relative;
-      margin-top: 16px;
+      margin-top: 14px;
       border: 1px solid var(--border-color);
       border-radius: 10px;
       background: #ffffff;
       overflow: hidden;
       cursor: grab;
+      touch-action: none;
     }
 
     #chart-wrapper:active {
@@ -120,6 +129,7 @@
 
     svg {
       display: block;
+      width: 100%;
     }
 
     /* Tooltip */
@@ -129,21 +139,21 @@
       background: #ffffff;
       border: 2px solid #0f172a;
       border-radius: 8px;
-      padding: 14px 16px;
-      width: 250px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+      padding: 12px 14px;
+      width: 230px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
       pointer-events: none;
-      font-size: 13px;
+      font-size: 12px;
       z-index: 200;
     }
 
     .tooltip-header {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 800;
       text-transform: uppercase;
       border-bottom: 2px solid #0f172a;
       padding-bottom: 4px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -152,19 +162,19 @@
     .stat-row {
       display: flex;
       justify-content: space-between;
-      margin: 4px 0;
+      margin: 3px 0;
     }
 
     .book-list {
-      margin-top: 10px;
-      padding-top: 8px;
+      margin-top: 8px;
+      padding-top: 6px;
       border-top: 1px dashed #cbd5e1;
       font-size: 11px;
       color: var(--text-muted);
     }
 
     .book-list ul {
-      margin: 4px 0 0 0;
+      margin: 3px 0 0 0;
       padding-left: 14px;
       color: #334155;
     }
@@ -176,12 +186,12 @@
 
     .midline {
       stroke: #94a3b8;
-      stroke-dasharray: 5, 5;
+      stroke-dasharray: 4, 4;
       stroke-width: 1.5;
     }
 
     .axis-label {
-      font-size: 12.5px;
+      font-size: 11.5px;
       font-weight: 700;
       fill: #475569;
     }
@@ -200,16 +210,17 @@
 <div class="container">
   <header>
     <h1>Bears Will Be Boys: Animal Gender Scale</h1>
-    <p class="subtitle">
-      Horizontal position marks each animal along a spectrum from 100% He/Him (all male) on the far left to 100% She/Her (all female) on the far right. Stack height reflects how often that animal appears across all books, with the $n$ badge showing the exact sample count.       </p>
+    <p class="subtitle" id="subtitle-desc">
+      Position marks each animal along the spectrum from He/Him to She/Her. Stack size indicates frequency across books ($n$).
+    </p>
     <div class="toolbar">
       <div class="controls-group">
         <button class="btn" id="btn-zoom-in">＋ Zoom In</button>
         <button class="btn" id="btn-zoom-out">－ Zoom Out</button>
         <button class="btn" id="btn-zoom-reset">Reset</button>
-        <span class="zoom-level-badge" id="visible-count-badge">Loading animals...</span>
+        <span class="zoom-level-badge" id="visible-count-badge">Loading...</span>
       </div>
-      <div class="zoom-instruction">🔍 Scroll / pinch to zoom in &amp; discover smaller-sample animals</div>
+      <div class="zoom-instruction">🔍 Pinch/scroll to zoom in for rarer animals</div>
     </div>
   </header>
 
@@ -248,36 +259,10 @@ const animalIcons = {
 };
 
 const evenFive = new Set(["bird", "duck", "cat", "mouse", "pig"]);
-
 const containerEl = document.getElementById("chart-wrapper");
-const width = 1140;
-const height = 540;
-const margin = { top: 50, right: 70, bottom: 95, left: 70 };
-const innerWidth = width - margin.left - margin.right;
-const innerHeight = height - margin.top - margin.bottom;
-
-const svg = d3.select("#chart")
-  .attr("viewBox", `0 0 ${width} ${height}`)
-  .attr("width", "100%")
-  .attr("height", height);
-
-// Clip path so zooming elements don't spill outside chart margins
-svg.append("defs").append("clipPath")
-  .attr("id", "chart-clip")
-  .append("rect")
-  .attr("x", 0)
-  .attr("y", -margin.top)
-  .attr("width", innerWidth)
-  .attr("height", innerHeight + margin.top + margin.bottom);
-
-const mainG = svg.append("g")
-  .attr("transform", `translate(${margin.left},${margin.top})`);
-
-const zoomableG = mainG.append("g")
-  .attr("clip-path", "url(#chart-clip)");
-
-const stacksG = zoomableG.append("g").attr("class", "stacks-group");
 const tooltip = d3.select("#tooltip");
+
+let globalDataset = [];
 
 d3.csv("kids-book-animals.csv").then(rawData => {
   const grouped = d3.rollup(
@@ -295,193 +280,355 @@ d3.csv("kids-book-animals.csv").then(rawData => {
     d => d.animal_group
   );
 
-  const dataset = Array.from(grouped, ([animal, meta]) => ({
+  globalDataset = Array.from(grouped, ([animal, meta]) => ({
     animal,
     ...meta
   })).sort((a, b) => a.pctFemale - b.pctFemale);
 
-  const baseScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+  renderChart();
+});
 
-  // Baseline axis
-  mainG.append("line")
-    .attr("class", "axis-line")
-    .attr("x1", 0).attr("x2", innerWidth)
-    .attr("y1", innerHeight).attr("y2", innerHeight);
+function renderChart() {
+  if (!globalDataset.length) return;
 
-  // Labels
-  mainG.append("text").attr("class", "axis-label")
-    .attr("x", 0).attr("y", innerHeight + 46)
-    .text("← 100% He/Him");
+  const svg = d3.select("#chart");
+  svg.selectAll("*").remove();
 
-  mainG.append("text").attr("class", "axis-label")
-    .attr("x", innerWidth).attr("y", innerHeight + 46)
-    .attr("text-anchor", "end")
-    .text("100% She/Her →");
+  // Inspect mode check: is mobile if screen width <= 640px
+  const isVertical = window.innerWidth <= 640;
 
-  // Midline group
-  const midlineG = zoomableG.append("g").attr("class", "midline-g");
-  midlineG.append("line")
-    .attr("class", "midline")
-    .attr("y1", -20).attr("y2", innerHeight);
+  const width = isVertical ? 380 : 1140;
+  const height = isVertical ? 720 : 540;
+  const margin = isVertical 
+    ? { top: 40, right: 30, bottom: 40, left: 75 }
+    : { top: 50, right: 70, bottom: 95, left: 70 };
 
-  midlineG.append("text")
-    .attr("class", "axis-label")
-    .attr("y", innerHeight + 46)
-    .attr("text-anchor", "middle")
-    .text("Balanced");
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
 
-  // Create element nodes for each animal
-  const animalNodes = stacksG.selectAll(".animal-stack")
-    .data(dataset, d => d.animal)
-    .enter()
-    .append("g")
-    .attr("class", "animal-stack")
-    .attr("cursor", "pointer");
+  svg.attr("viewBox", `0 0 ${width} ${height}`)
+     .attr("height", height);
 
-  animalNodes.each(function(d) {
-    const g = d3.select(this);
-    const icon = animalIcons[d.animal] || "🐾";
-    const isEven = evenFive.has(d.animal);
+  svg.append("defs").append("clipPath")
+    .attr("id", "chart-clip")
+    .append("rect")
+    .attr("x", isVertical ? -margin.left : 0)
+    .attr("y", isVertical ? 0 : -margin.top)
+    .attr("width", isVertical ? width : innerWidth)
+    .attr("height", isVertical ? innerHeight : innerHeight + margin.top + margin.bottom);
 
-    const step = 18;
-    const stackCount = d.total <= 8 ? d.total : Math.min(20, 8 + Math.round((d.total - 8) / 4.5));
-    const stackTopY = innerHeight - (stackCount * step) - 10;
+  const mainG = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Invisible transparent overlay box to capture hover/mouse events across the stack
-    g.append("rect")
-      .attr("x", -18)
-      .attr("y", stackTopY - 14)
-      .attr("width", 36)
-      .attr("height", innerHeight - (stackTopY - 14))
-      .attr("fill", "transparent");
+  const zoomableG = mainG.append("g")
+    .attr("clip-path", "url(#chart-clip)");
 
-    // Pure stacked icons (no oval border)
-    for (let i = 0; i < stackCount; i++) {
+  const stacksG = zoomableG.append("g").attr("class", "stacks-group");
+
+  if (isVertical) {
+    // --- VERTICAL MOBILE LAYOUT ---
+    const baseScale = d3.scaleLinear().domain([0, 100]).range([0, innerHeight]);
+
+    // Baseline axis (Vertical at x = 0)
+    mainG.append("line")
+      .attr("class", "axis-line")
+      .attr("x1", 0).attr("x2", 0)
+      .attr("y1", 0).attr("y2", innerHeight);
+
+    // Top/Bottom labels
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", 0).attr("y", -14)
+      .attr("text-anchor", "start")
+      .text("↑ 100% He/Him");
+
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", 0).attr("y", innerHeight + 24)
+      .attr("text-anchor", "start")
+      .text("↓ 100% She/Her");
+
+    // Midline group (Horizontal dashed line at 50%)
+    const midlineG = zoomableG.append("g").attr("class", "midline-g");
+    midlineG.append("line")
+      .attr("class", "midline")
+      .attr("x1", 0).attr("x2", innerWidth + 15);
+
+    midlineG.append("text")
+      .attr("class", "axis-label")
+      .attr("x", innerWidth + 20)
+      .attr("y", 4)
+      .attr("text-anchor", "start")
+      .text("50/50");
+
+    const animalNodes = stacksG.selectAll(".animal-stack")
+      .data(globalDataset, d => d.animal)
+      .enter()
+      .append("g")
+      .attr("class", "animal-stack")
+      .attr("cursor", "pointer");
+
+    animalNodes.each(function(d) {
+      const g = d3.select(this);
+      const icon = animalIcons[d.animal] || "🐾";
+      const isEven = evenFive.has(d.animal);
+      const step = 15;
+      const stackCount = d.total <= 6 ? d.total : Math.min(12, 6 + Math.round((d.total - 6) / 5));
+      const stackRightX = stackCount * step;
+
+      // Tap capture area
+      g.append("rect")
+        .attr("x", -70)
+        .attr("y", -12)
+        .attr("width", stackRightX + 100)
+        .attr("height", 24)
+        .attr("fill", "transparent");
+
+      // Animal name on left
+      g.append("text")
+        .attr("x", -8)
+        .attr("y", 4)
+        .attr("text-anchor", "end")
+        .attr("font-size", "10px")
+        .attr("font-weight", isEven ? "800" : "600")
+        .attr("fill", isEven ? "#b45309" : "#1e293b")
+        .text(d.animal.toUpperCase());
+
+      // Stack extending to right
+      for (let i = 0; i < stackCount; i++) {
+        g.append("text")
+          .attr("x", 10 + (i * step))
+          .attr("y", 5)
+          .attr("text-anchor", "middle")
+          .attr("font-size", "13px")
+          .text(icon);
+      }
+
+      // Sample badge on right of stack
+      g.append("text")
+        .attr("x", 12 + (stackCount * step) + 4)
+        .attr("y", 4)
+        .attr("text-anchor", "start")
+        .attr("font-size", "9.5px")
+        .attr("font-weight", "800")
+        .attr("fill", isEven ? "#b45309" : "#64748b")
+        .text(`n=${d.total}`);
+    });
+
+    bindTooltips(animalNodes);
+
+    // Vertical Zoom
+    const zoom = d3.zoom()
+      .scaleExtent([1, 8])
+      .translateExtent([[0, 0], [innerWidth, innerHeight]])
+      .on("zoom", (event) => {
+        const transform = event.transform;
+        const newYScale = transform.rescaleY(baseScale);
+
+        midlineG.attr("transform", `translate(0, ${newYScale(50)})`);
+
+        let minN = 10;
+        if (transform.k >= 4.0) minN = 1;
+        else if (transform.k >= 2.4) minN = 2;
+        else if (transform.k >= 1.5) minN = 5;
+
+        let visibleCount = 0;
+        animalNodes.each(function(d) {
+          const node = d3.select(this);
+          const isVisible = d.total >= minN;
+          const posY = newYScale(d.pctFemale);
+          node.attr("transform", `translate(0, ${posY})`);
+
+          if (isVisible && posY >= -15 && posY <= innerHeight + 15) {
+            node.style("display", "block").style("opacity", 1);
+            visibleCount++;
+          } else {
+            node.style("display", "none").style("opacity", 0);
+          }
+        });
+
+        d3.select("#visible-count-badge").text(
+          `Zoom ${transform.k.toFixed(1)}×: Showing ${visibleCount} (n ≥ ${minN})`
+        );
+      });
+
+    svg.call(zoom);
+    bindButtons(svg, zoom);
+    svg.call(zoom.transform, d3.zoomIdentity);
+
+  } else {
+    // --- HORIZONTAL DESKTOP LAYOUT ---
+    const baseScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+
+    mainG.append("line")
+      .attr("class", "axis-line")
+      .attr("x1", 0).attr("x2", innerWidth)
+      .attr("y1", innerHeight).attr("y2", innerHeight);
+
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", 0).attr("y", innerHeight + 46)
+      .text("← 100% He/Him");
+
+    mainG.append("text").attr("class", "axis-label")
+      .attr("x", innerWidth).attr("y", innerHeight + 46)
+      .attr("text-anchor", "end")
+      .text("100% She/Her →");
+
+    const midlineG = zoomableG.append("g").attr("class", "midline-g");
+    midlineG.append("line")
+      .attr("class", "midline")
+      .attr("y1", -20).attr("y2", innerHeight);
+
+    midlineG.append("text")
+      .attr("class", "axis-label")
+      .attr("y", innerHeight + 46)
+      .attr("text-anchor", "middle")
+      .text("Balanced");
+
+    const animalNodes = stacksG.selectAll(".animal-stack")
+      .data(globalDataset, d => d.animal)
+      .enter()
+      .append("g")
+      .attr("class", "animal-stack")
+      .attr("cursor", "pointer");
+
+    animalNodes.each(function(d) {
+      const g = d3.select(this);
+      const icon = animalIcons[d.animal] || "🐾";
+      const isEven = evenFive.has(d.animal);
+      const step = 18;
+      const stackCount = d.total <= 8 ? d.total : Math.min(20, 8 + Math.round((d.total - 8) / 4.5));
+      const stackTopY = innerHeight - (stackCount * step) - 10;
+
+      g.append("rect")
+        .attr("x", -18)
+        .attr("y", stackTopY - 14)
+        .attr("width", 36)
+        .attr("height", innerHeight - (stackTopY - 14))
+        .attr("fill", "transparent");
+
+      for (let i = 0; i < stackCount; i++) {
+        g.append("text")
+          .attr("x", 0)
+          .attr("y", innerHeight - 8 - (i * step))
+          .attr("text-anchor", "middle")
+          .attr("font-size", "16px")
+          .text(icon);
+      }
+
       g.append("text")
         .attr("x", 0)
-        .attr("y", innerHeight - 8 - (i * step))
+        .attr("y", stackTopY - 6)
         .attr("text-anchor", "middle")
-        .attr("font-size", "16px")
-        .text(icon);
-    }
+        .attr("font-size", "10.5px")
+        .attr("font-weight", "800")
+        .attr("fill", isEven ? "#b45309" : "#475569")
+        .text(`n=${d.total}`);
 
-    // Top n frequency badge
-    g.append("text")
-      .attr("x", 0)
-      .attr("y", stackTopY - 6)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "10.5px")
-      .attr("font-weight", "800")
-      .attr("fill", isEven ? "#b45309" : "#475569")
-      .text(`n=${d.total}`);
+      g.append("text")
+        .attr("x", 0)
+        .attr("y", innerHeight + 16)
+        .attr("text-anchor", "end")
+        .attr("transform", `rotate(-45, 0, ${innerHeight + 16})`)
+        .attr("font-size", "11px")
+        .attr("font-weight", isEven ? "800" : "600")
+        .attr("fill", isEven ? "#b45309" : "#1e293b")
+        .text(d.animal.toUpperCase());
+    });
 
-    // Diagonal animal name label (angled -45 degrees)
-    g.append("text")
-      .attr("x", 0)
-      .attr("y", innerHeight + 16)
-      .attr("text-anchor", "end")
-      .attr("transform", `rotate(-45, 0, ${innerHeight + 16})`)
-      .attr("font-size", "11px")
-      .attr("font-weight", isEven ? "800" : "600")
-      .attr("fill", isEven ? "#b45309" : "#1e293b")
-      .text(d.animal.toUpperCase());
+    bindTooltips(animalNodes);
+
+    // Horizontal Zoom
+    const zoom = d3.zoom()
+      .scaleExtent([1, 8])
+      .translateExtent([[0, 0], [innerWidth, innerHeight]])
+      .on("zoom", (event) => {
+        const transform = event.transform;
+        const newXScale = transform.rescaleX(baseScale);
+
+        midlineG.attr("transform", `translate(${newXScale(50)}, 0)`);
+
+        let minN = 10;
+        if (transform.k >= 4.0) minN = 1;
+        else if (transform.k >= 2.6) minN = 2;
+        else if (transform.k >= 1.6) minN = 5;
+
+        let visibleCount = 0;
+        animalNodes.each(function(d) {
+          const node = d3.select(this);
+          const isVisible = d.total >= minN;
+          const posX = newXScale(d.pctFemale);
+          node.attr("transform", `translate(${posX}, 0)`);
+
+          if (isVisible && posX >= -40 && posX <= innerWidth + 40) {
+            node.style("display", "block").style("opacity", 1);
+            visibleCount++;
+          } else {
+            node.style("display", "none").style("opacity", 0);
+          }
+        });
+
+        d3.select("#visible-count-badge").text(
+          `Zoom ${transform.k.toFixed(1)}×: Showing ${visibleCount} animals (n ≥ ${minN})`
+        );
+      });
+
+    svg.call(zoom);
+    bindButtons(svg, zoom);
+    svg.call(zoom.transform, d3.zoomIdentity);
+  }
+}
+
+function bindButtons(svg, zoom) {
+  d3.select("#btn-zoom-in").on("click", () => {
+    svg.transition().duration(350).call(zoom.scaleBy, 1.4);
   });
+  d3.select("#btn-zoom-out").on("click", () => {
+    svg.transition().duration(350).call(zoom.scaleBy, 0.7);
+  });
+  d3.select("#btn-zoom-reset").on("click", () => {
+    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+  });
+}
 
-  // Tooltip bindings
-  animalNodes.on("mouseover", (event, d) => {
+function bindTooltips(nodes) {
+  nodes.on("pointerdown mouseover", (event, d) => {
     tooltip.style("visibility", "visible")
       .html(`
         <div class="tooltip-header">
-          <span class="animal-name"></span>
-          <span class="animal-icon"></span>
+          <span class="animal-name">${d.animal}</span>
+          <span class="animal-icon">${animalIcons[d.animal] || "🐾"}</span>
         </div>
-        <div class="stat-row"><span>Total Books (n):</span> <strong class="total-stat"></strong></div>
-        <div class="stat-row"><span>Male (He/Him):</span> <strong class="male-stat"></strong></div>
-        <div class="stat-row"><span>Female (She/Her):</span> <strong class="female-stat"></strong></div>
-        <div class="stat-row neutral-row"><span>Neutral (It):</span> <strong class="neutral-stat"></strong></div>
+        <div class="stat-row"><span>Total Books (n):</span> <strong>${d.total}</strong></div>
+        <div class="stat-row"><span>Male (He/Him):</span> <strong>${d.male} (${d.pctMale.toFixed(1)}%)</strong></div>
+        <div class="stat-row"><span>Female (She/Her):</span> <strong>${d.female} (${d.pctFemale.toFixed(1)}%)</strong></div>
+        ${d.neutral > 0 ? `<div class="stat-row"><span>Neutral (It):</span> <strong>${d.neutral}</strong></div>` : ''}
         <div class="book-list">
           <strong>Sample Titles:</strong>
-          <ul></ul>
+          <ul>${d.titles.map(t => `<li>${t}</li>`).join('')}</ul>
         </div>
       `);
-    tooltip.select(".animal-name").text(d.animal);
-    tooltip.select(".animal-icon").text(animalIcons[d.animal] || "🐾");
-    tooltip.select(".total-stat").text(d.total);
-    tooltip.select(".male-stat").text(`${d.male} (${d.pctMale.toFixed(1)}%)`);
-    tooltip.select(".female-stat").text(`${d.female} (${d.pctFemale.toFixed(1)}%)`);
-    tooltip.select(".neutral-row").style("display", d.neutral > 0 ? null : "none");
-    tooltip.select(".neutral-stat").text(d.neutral);
-    tooltip.select(".book-list ul")
-      .selectAll("li")
-      .data(d.titles)
-      .join("li")
-      .text(title => title);
+    positionTooltip(event);
   })
-  .on("mousemove", (event) => {
-    const containerRect = containerEl.getBoundingClientRect();
-    const leftPos = event.clientX - containerRect.left + 15;
-    const topPos = event.clientY - containerRect.top - 70;
-    tooltip.style("top", `${Math.max(10, topPos)}px`).style("left", `${leftPos}px`);
-  })
-  .on("mouseout", () => tooltip.style("visibility", "hidden"));
+  .on("pointermove mousemove", (event) => positionTooltip(event))
+  .on("pointerleave mouseout", () => tooltip.style("visibility", "hidden"));
+}
 
-  // Zoom handling logic
-  const zoom = d3.zoom()
-    .scaleExtent([1, 8])
-    .translateExtent([[0, 0], [innerWidth, innerHeight]])
-    .on("zoom", (event) => {
-      const transform = event.transform;
-      const newXScale = transform.rescaleX(baseScale);
+function positionTooltip(event) {
+  const containerRect = containerEl.getBoundingClientRect();
+  let leftPos = event.clientX - containerRect.left + 15;
+  let topPos = event.clientY - containerRect.top - 60;
 
-      // Reposition 50/50 midline
-      const midX = newXScale(50);
-      midlineG.attr("transform", `translate(${midX}, 0)`);
+  // Prevent spilling off right or bottom edges on narrow viewports
+  if (leftPos + 230 > containerRect.width) {
+    leftPos = Math.max(10, containerRect.width - 240);
+  }
+  tooltip.style("top", `${Math.max(10, topPos)}px`).style("left", `${leftPos}px`);
+}
 
-      // Determine visibility threshold based on zoom level k
-      let minN = 10;
-      if (transform.k >= 4.0) minN = 1;
-      else if (transform.k >= 2.6) minN = 2;
-      else if (transform.k >= 1.6) minN = 5;
-
-      let visibleCount = 0;
-
-      animalNodes.each(function(d) {
-        const node = d3.select(this);
-        const isVisible = d.total >= minN;
-        const posX = newXScale(d.pctFemale);
-
-        node.attr("transform", `translate(${posX}, 0)`);
-
-        if (isVisible && posX >= -40 && posX <= innerWidth + 40) {
-          node.style("display", "block").style("opacity", 1);
-          visibleCount++;
-        } else {
-          node.style("display", "none").style("opacity", 0);
-        }
-      });
-
-      d3.select("#visible-count-badge").text(
-        `Zoom ${transform.k.toFixed(1)}×: Showing ${visibleCount} animals (n ≥ ${minN})`
-      );
-    });
-
-  svg.call(zoom);
-
-  // Zoom Button Controls
-  d3.select("#btn-zoom-in").on("click", () => {
-    svg.transition().duration(400).call(zoom.scaleBy, 1.4);
-  });
-
-  d3.select("#btn-zoom-out").on("click", () => {
-    svg.transition().duration(400).call(zoom.scaleBy, 0.7);
-  });
-
-  d3.select("#btn-zoom-reset").on("click", () => {
-    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
-  });
-
-  // Initial render at 1x
-  svg.call(zoom.transform, d3.zoomIdentity);
+// Re-render when inspecting/resizing between desktop and mobile viewport widths
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderChart, 150);
 });
 </script>
 </body>
